@@ -1,5 +1,6 @@
 from src.models import TripRequest
-from src.advisor import advise_trip
+from src.advisor_llm import advise_trip_with_explanation
+
 
 def main():
     trip = TripRequest(
@@ -12,14 +13,20 @@ def main():
         constraints={"max_hike_hours": 6},
     )
 
-    scores, summary = advise_trip(trip)
+    scores, explanation, prompt_debug = advise_trip_with_explanation(trip)
 
-    print("Scores:")
+    print("=== Scores ===")
     print(scores)
-    print("\nSummary:")
-    print(summary)
+
+    print("\n=== Explanation (stub) ===")
+    print(explanation)
+
+    print("\n=== Prompt Debug (first 2000 chars) ===")
+    print(prompt_debug[:2000])
+
 
 if __name__ == "__main__":
     main()
+
 
 

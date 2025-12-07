@@ -29,6 +29,10 @@ def get_alerts_for_park(park_code: str) -> List[Alert]:
     data = resp.json()
 
     alerts: List[Alert] = []
+    # inside get_alerts_for_park
+    print("DEBUG NPS alerts raw count:", len(data))
+    print(data)
+
     for item in data.get("data", []):
         alert = Alert(
             alert_id=item.get("id", ""),
@@ -42,7 +46,13 @@ def get_alerts_for_park(park_code: str) -> List[Alert]:
             summary=item.get("description") or None,
             raw_text=item.get("description") or None,
         )
+        print("[DEBUG nps_client] Raw item:")
+        print("  title   :", repr(item.get("title")))
+        print("  url     :", repr(item.get("url")))
+        print("  desc len:", len((item.get("description") or "")))
+
         alerts.append(alert)
+        
 
     return alerts
 

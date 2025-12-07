@@ -10,8 +10,15 @@ class RAGRetriever:
         self.park_code = park_code
         self.embedder = embedder
 
+        # Use a persistent Chroma client in the local `chroma_db` folder
         self.client = chromadb.PersistentClient(path="chroma_db")
-        self.collection = self.client.get_collection(name=f"park_{park_code}")
+
+        # IMPORTANT: get_or_create_collection so we don't crash
+        # if the collection doesn't exist yet.
+        self.collection = self.client.get_or_create_collection(
+            name=f"park_{park_code}",
+            metadata={"hnsw:space": "cosine"},
+        )
 
     def search(self, query: str, top_k: int = 3) -> List[Tuple[DocumentChunk, float]]:
         """
@@ -41,3 +48,4 @@ class RAGRetriever:
             out.append((chunk, float(dist)))
 
         return out
+
