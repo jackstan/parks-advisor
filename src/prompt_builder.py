@@ -1,15 +1,52 @@
 from typing import Dict, Any, List
 
-from .models import TripRequest, Scores, Alert, DocumentChunk
+from .models import TripRequest, Scores, Alert, DocumentChunk, WeatherDay
 
+
+# --- Unit conversions ---------------------------------------------------------
+
+def c_to_f(c: float) -> float:
+    return (c * 9/5) + 32
+
+def mps_to_mph(mps: float) -> float:
+    return mps * 2.23694
+
+
+# --- Weather formatting -------------------------------------------------------
+
+def _format_weather_section(weather: List[WeatherDay]) -> str:
+    if not weather:
+        return "Weather forecast: no data returned.\n"
+
+    text = "Weather forecast (°F, mph):\n"
+    for day in weather[:7]:  # limit to a week for readability
+        high_f = c_to_f(day.temp_max_c)
+        low_f  = c_to_f(day.temp_min_c)
+        wind_mph = mps_to_mph(day.wind_speed_max_mps)
+        precip_prob = day.precip_probability * 100
+
+        line = (
+            f"- {day.date}: high {high_f:.0f}°F / low {low_f:.0f}°F, "
+            f"precip {day.precip_mm:.1f} mm (~{precip_prob:.0f}%), "
+            f"wind max {wind_mph:.0f} mph, "
+            f"heat risk: {day.heat_index_risk}, "
+            f"storm risk: {day.storm_risk}"
+        )
+        text += line + "\n"
+
+    return text + "\n"
+
+
+# --- Main prompt builder ------------------------------------------------------
 
 def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
     trip: TripRequest = context["trip"]
     scores: Scores = context["scores"]
     alerts: List[Alert] = context["alerts"]
     chunks: List[DocumentChunk] = context["rag_chunks"]
+    weather: List[WeatherDay] = context["weather"]   # <<< NEW
 
-    # 1) System / role + basic trip info
+    # 1) Header
     header = (
         "You are an experienced Yosemite trip-planning assistant. "
         "Use the structured data and official information below to give realistic, "
@@ -34,7 +71,10 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
     if scores.notes:
         scores_text += "Score notes:\n" + "\n".join(f"- {n}" for n in scores.notes) + "\n"
 
-    # 3) Alerts
+    # 3) Weather (NEW SECTION)
+    weather_text = _format_weather_section(weather)
+
+    # 4) Alerts
     if alerts:
         alerts_text = "Current NPS alerts:\n"
         for a in alerts[:5]:
@@ -45,8 +85,7 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
     else:
         alerts_text = "Current NPS alerts: none returned.\n"
 
-
-    # 4) RAG snippets
+    # 5) RAG Snippets
     if chunks:
         rag_text = "Relevant official information snippets:\n"
         for i, c in enumerate(chunks[:5]):
@@ -55,7 +94,7 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
     else:
         rag_text = "No additional official documentation snippets retrieved.\n"
 
-    # 5) Instructions to the LLM
+    # 6) Instructions for the LLM
     instructions = (
         "Using ONLY the information above, answer the following:\n"
         "1) Give a verdict: GO, GO-WITH-CAUTION, or AVOID.\n"
@@ -67,4 +106,12 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
         "6) If information is missing or uncertain, say so explicitly.\n"
     )
 
-    return header + scores_text + "\n" + alerts_text + "\n" + rag_text + "\n" + instructions
+    # Combine all sections
+    return (
+        header
+        + scores_text + "\n"
+        + weather_text + "\n"
+        + alerts_text + "\n"
+        + rag_text + "\n"
+        + instructions
+    )

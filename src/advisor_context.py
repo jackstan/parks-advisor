@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
-from .rag.index_builder import build_vector_index_for_park
 
-from .models import TripRequest, Scores, Alert, DocumentChunk
+from .rag.index_builder import build_vector_index_for_park
+from .models import TripRequest, Scores, Alert, DocumentChunk, WeatherDay
 from .weather_client import get_weather_for_trip
 from .nps_client import get_alerts_for_park
 from .scoring import compute_scores
@@ -13,14 +13,16 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
     """
     Orchestrate all data sources and return a rich context dict:
     - trip info
+    - weather
     - scores + risk flags + notes
     - alerts
     - retrieved RAG chunks
+
     This is what the LLM layer will consume.
     """
 
     # 1) Core signals: weather + alerts + scores
-    weather_days = get_weather_for_trip(
+    weather_days: List[WeatherDay] = get_weather_for_trip(
         trip.park_code, trip.start_date, trip.end_date
     )
     alerts: List[Alert] = get_alerts_for_park(trip.park_code)
@@ -53,9 +55,7 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
 
     retriever = RAGRetriever(trip.park_code, embedder)
 
-
     rag_chunks: List[DocumentChunk] = []
-
     for q in queries:
         results = retriever.search(q, top_k=2)
         for chunk, score in results:
@@ -72,6 +72,7 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
 
     return {
         "trip": trip,
+        "weather": weather_days,      # 👈 NEW: make weather available to prompt builder
         "scores": scores,
         "alerts": alerts,
         "rag_chunks": unique_chunks,
