@@ -68,3 +68,10 @@ class Alert:
     url: Optional[str] = None
     summary: Optional[str] = None
     raw_text: Optional[str] = None
+
+@dataclass
+class DocumentChunk:
+    doc_id: str        # e.g., NPS article id
+    chunk_id: int      # index of the chunk within the article
+    text: str          # the actual chunk text
+    source: str  
