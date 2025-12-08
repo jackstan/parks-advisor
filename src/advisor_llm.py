@@ -1,42 +1,76 @@
+# src/advisor_llm.py
+
 from typing import Tuple
+from . import config  # noqa: F401  # ensures .env is loaded via config.py
+
+from openai import OpenAI
 
 from .models import TripRequest, Scores
 from .advisor_context import build_trip_context
 from .prompt_builder import build_trip_advice_prompt
 
+client = OpenAI()
+
+
+def _call_llm_with_prompt(prompt: str) -> str:
+    """
+    Call the OpenAI chat model with the full prompt text.
+    If anything goes wrong, return a clear fallback message.
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a cautious, realistic, safety-focused Yosemite "
+                        "trip-planning assistant. You give practical, conservative "
+                        "advice and never overstate safety."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.3,
+        )
+        return response.choices[0].message.content or ""
+    except Exception as e:
+        # Fallback so the rest of the app doesn't crash if the LLM call fails
+        return (
+            "The trip advisor's language model call failed. "
+            "Here is a placeholder explanation instead. "
+            f"(Internal error: {e})"
+        )
+
 
 def advise_trip_with_explanation(trip: TripRequest) -> Tuple[Scores, str, str]:
     """
-    High-level advisor:
-    - builds full data + RAG context
-    - builds an LLM-ready prompt
-    - returns:
-        scores          -> numeric model output
-        explanation     -> placeholder explanation (LLM will replace later)
-        prompt_debug    -> the full prompt we'd send to the LLM
-    """
-    context = build_trip_context(trip)
-    scores: Scores = context["scores"]
+    High-level advisor function.
 
+    Orchestrates:
+      - build_trip_context(trip)       -> gathers weather, alerts, scores, RAG
+      - build_trip_advice_prompt(...)  -> builds a detailed LLM prompt
+      - _call_llm_with_prompt(...)     -> gets a natural-language explanation
+
+    Returns:
+      scores: Scores       - numeric summary (access, weather, readiness, etc.)
+      explanation: str     - narrative advice from the LLM
+      prompt_debug: str    - the exact prompt sent to the LLM (for debugging)
+    """
+
+    # 1) Build trip context dict
+    context = build_trip_context(trip)
+
+    # 2) Build the LLM-ready prompt string (includes trip, scores, weather, alerts, RAG)
     prompt = build_trip_advice_prompt(context)
 
-    # Simple rule-based verdict for now (stub instead of a real LLM call)
-    if scores.trip_readiness_score >= 80 and "access_risk" not in scores.risk_flags:
-        verdict = "GO"
-    elif scores.trip_readiness_score >= 60:
-        verdict = "GO-WITH-CAUTION"
-    else:
-        verdict = "AVOID"
+    # 3) Call the LLM to generate an explanation
+    explanation = _call_llm_with_prompt(prompt)
 
-    explanation = (
-        f"Verdict: {verdict}\n"
-        f"- Trip readiness: {scores.trip_readiness_score:.0f}/100\n"
-        f"- Access score: {scores.access_score:.0f}/100\n"
-        f"- Weather score: {scores.weather_score:.0f}/100\n"
-        f"- Risk flags: {', '.join(scores.risk_flags) if scores.risk_flags else 'none'}\n\n"
-        "This explanation is currently rule-based. In a later step, this function will call "
-        "a real LLM with `prompt_debug` to generate a richer, grounded narrative using the "
-        "scores, alerts, and official snippets."
-    )
+    # 4) Extract the scores out of the context for convenient return
+    scores: Scores = context["scores"]
 
     return scores, explanation, prompt

@@ -1,1 +1,2 @@
-pip freeze > requirements.txt
+openai>=1.0.0
+python.dotenv
