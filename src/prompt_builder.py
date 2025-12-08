@@ -110,8 +110,10 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
         "\"(from Snippet 2)\". If the snippets do not mention any specific trails, stay at "
         "the level of trail TYPES (e.g. \"moderate valley-floor loops\") instead of naming trails.\n"
         "5) List 3–6 concrete safety or gear recommendations.\n"
-        "6) If information is missing or uncertain (especially weather far in the future), "
-        "say so explicitly and be conservative.\n"
+        "6) If the data above explicitly indicates missing or uncertain information "
+        "(for example notes mentioning 'weather_uncertain' or missing forecasts), "
+        "say so clearly. Otherwise, do not describe the forecast as 'far in advance', "
+        "but you may still note that short-term forecasts can change.\n"
     )
 
 
