@@ -75,3 +75,22 @@ class DocumentChunk:
     chunk_id: int      # index of the chunk within the article
     text: str          # the actual chunk text
     source: str  
+
+@dataclass
+class ThingsToDoItem:
+    """
+    A single 'thing to do' from the NPS API for a park.
+    This is especially useful for hikes/trails and key viewpoints.
+
+    We keep it simple and text-centric so it plays nicely with RAG.
+    """
+    park_code: str
+    id: str
+    title: str
+    short_description: str
+    listing_description: str
+    long_description: str 
+    url: str
+    activities: List[str]
+    duration_hours: Optional[float] = None
+    is_trail: bool = False

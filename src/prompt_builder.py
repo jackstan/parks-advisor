@@ -102,11 +102,18 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
         "1) Give a verdict: GO, GO-WITH-CAUTION, or AVOID.\n"
         "2) Explain your verdict in 2–4 short paragraphs.\n"
         "3) Call out specific risks (weather, access, seasonality) and how to mitigate them.\n"
-        "4) Suggest high-level trail or activity types suitable for this trip, "
-        "given the conditions (not specific trails by name).\n"
+        "4) Suggest 2–4 specific trail options BY NAME **only if** they are mentioned "
+        "or clearly implied in the snippets above. For each suggested trail, briefly note:\n"
+        "   - who it is suitable for (based on the hiker profile and conditions), and\n"
+        "   - why you chose it.\n"
+        "   When you recommend a trail, reference the snippet number(s) that support it, e.g. "
+        "\"(from Snippet 2)\". If the snippets do not mention any specific trails, stay at "
+        "the level of trail TYPES (e.g. \"moderate valley-floor loops\") instead of naming trails.\n"
         "5) List 3–6 concrete safety or gear recommendations.\n"
-        "6) If information is missing or uncertain, say so explicitly.\n"
+        "6) If information is missing or uncertain (especially weather far in the future), "
+        "say so explicitly and be conservative.\n"
     )
+
 
     # Combine all sections
     return (
