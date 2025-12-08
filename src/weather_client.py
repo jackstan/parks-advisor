@@ -1,34 +1,65 @@
 from typing import List, Optional
+from datetime import date
+
 import requests
 
-from .models import WeatherDay
 from .config import PARKS
+from .models import WeatherDay
 
 
 def get_weather_for_trip(park_code: str, start_date: str, end_date: str) -> List[WeatherDay]:
     """
-    Fetch daily weather forecasts from Open-Meteo.
-    For now, we ignore the requested date range and just fetch the next 7 days.
+    Fetch daily weather forecasts from Open-Meteo for the requested trip window.
+
+    We now:
+      - respect the start_date and end_date passed in
+      - ask Open-Meteo specifically for that date range
     """
     park = PARKS[park_code]
     lat = park["lat"]
     lon = park["lon"]
 
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "daily": ",".join(
-            [
-                "temperature_2m_max",
-                "temperature_2m_min",
-                "precipitation_sum",
-                "precipitation_probability_max",
-                "windspeed_10m_max",
-            ]
-        ),
-        "timezone": "auto",
-        "forecast_days": 7,
-    }
+    # Basic sanity check: if dates look weird, just fall back to "next 7 days"
+    try:
+        start_dt = date.fromisoformat(start_date)
+        end_dt = date.fromisoformat(end_date)
+        if end_dt < start_dt:
+            raise ValueError("end_date before start_date")
+    except Exception:
+        # Fallback behavior: next 7 days from now
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "daily": ",".join(
+                [
+                    "temperature_2m_max",
+                    "temperature_2m_min",
+                    "precipitation_sum",
+                    "precipitation_probability_max",
+                    "windspeed_10m_max",
+                ]
+            ),
+            "timezone": "auto",
+            "forecast_days": 7,
+        }
+    else:
+        # Normal case: request exactly the trip window
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "daily": ",".join(
+                [
+                    "temperature_2m_max",
+                    "temperature_2m_min",
+                    "precipitation_sum",
+                    "precipitation_probability_max",
+                    "windspeed_10m_max",
+                ]
+            ),
+            "timezone": "auto",
+            "start_date": start_dt.isoformat(),
+            "end_date": end_dt.isoformat(),
+        }
 
     resp = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=10)
     resp.raise_for_status()

@@ -61,12 +61,14 @@ def build_trip_advice_prompt(context: Dict[str, Any]) -> str:
 
     # 2) Scores
     scores_text = (
-        "Trip scores:\n"
-        f"- Access score: {scores.access_score:.0f}/100\n"
-        f"- Weather score: {scores.weather_score:.0f}/100\n"
-        f"- Trip readiness: {scores.trip_readiness_score:.0f}/100\n"
-        f"- Risk flags: {', '.join(scores.risk_flags) if scores.risk_flags else 'none'}\n"
+    "Trip scores:\n"
+    f"- Access score: {scores.access_score:.0f}/100\n"
+    f"- Weather score: {scores.weather_score:.0f}/100\n"
+    f"- Crowd score: {scores.crowd_score:.0f}/100\n"
+    f"- Trip readiness: {scores.trip_readiness_score:.0f}/100\n"
+    f"- Risk flags: {', '.join(scores.risk_flags) if scores.risk_flags else 'none'}\n"
     )
+
 
     if scores.notes:
         scores_text += "Score notes:\n" + "\n".join(f"- {n}" for n in scores.notes) + "\n"
