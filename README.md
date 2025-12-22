@@ -23,14 +23,13 @@ A CLI demo (app.py)
 A Streamlit UI (ui_streamlit.py)
 
 ✨ Features
-
 Trip scoring
 
 Access score (closures, alerts)
 
 Weather score (temp, precip, wind)
 
-Crowd/seasonality signal
+Crowd / seasonality signal
 
 Overall trip readiness
 
@@ -48,9 +47,9 @@ RAG over NPS content
 
 Ingests:
 
-NPS articles for conditions / safety / background
+NPS articles for conditions, safety, and background
 
-NPS Things To Do for activity and hike descriptions
+NPS Things To Do content for activity and hike descriptions
 
 Stores chunks in a local Chroma vector DB
 
@@ -58,11 +57,11 @@ Uses a local embedding model (SentenceTransformers)
 
 LLM-backed advisor
 
-Builds a structured, “LLM-ready” prompt:
+Builds a structured, LLM-ready prompt:
 
 Trip details
 
-Scores + notes + risk flags
+Scores, notes, and risk flags
 
 Weather forecast (°F, mph)
 
@@ -78,7 +77,7 @@ A verdict: GO, GO-WITH-CAUTION, or AVOID
 
 A multi-paragraph explanation
 
-Risk discussion + gear recommendations
+Risk discussion and gear recommendations
 
 Streamlit UI
 
@@ -110,7 +109,7 @@ python app.py
 4. Run the Streamlit UI
 streamlit run ui_streamlit.py
 
-🧱 Project Structure
+🧱 Project structure
 parks-advisor/
 │
 ├── app.py                  # CLI demo entrypoint
@@ -121,7 +120,7 @@ parks-advisor/
 ├── .gitignore
 │
 └── src/
-    ├── config.py           # Env loading, park metadata
+    ├── config.py           # Env loading and park metadata
     ├── models.py           # Core dataclasses:
     │   - TripRequest
     │   - WeatherDay
@@ -133,8 +132,8 @@ parks-advisor/
     ├── weather_client.py   # Open-Meteo client
     ├── nps_client.py       # NPS alerts client
     ├── nps_articles.py     # NPS articles client
-    ├── nps_things_to_do.py # NPS "Things To Do" client
-    ├── trails_arcgis.py    # NPS ArcGIS trails ingestion + geometry logic
+    ├── nps_things_to_do.py # NPS Things To Do client
+    ├── trails_arcgis.py    # NPS ArcGIS trails ingestion and geometry logic
     │
     ├── scoring.py          # Trip scoring logic
     │
@@ -149,4 +148,4 @@ parks-advisor/
     │
     ├── advisor_context.py  # Orchestrates weather, alerts, scores, trails, and RAG
     ├── prompt_builder.py   # Builds the full LLM prompt
-    └── advisor_llm.py      # Calls the LLM and returns scores + explanation
+    └── advisor_llm.py      # Calls the LLM and returns scores and explanation
