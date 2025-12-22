@@ -1,107 +1,152 @@
-# 🏞️ Parks Advisor
+🏞️ Parks Advisor
 
 Parks Advisor is a real-data, RAG-augmented trip-planning and safety advisor for U.S. National Parks.
 
 It combines:
 
-- **Live weather** (Open-Meteo)
-- **Official NPS alerts** (closures, conditions)
-- **Official NPS content** (articles + Things To Do)
-- A simple **LLM advisor** that scores your trip and explains risks in plain language
+Live weather (Open-Meteo)
+
+Official NPS alerts (closures, conditions)
+
+Official NPS content (articles + Things To Do)
+
+Trail geometry data (NPS ArcGIS)
+
+A simple LLM advisor that scores your trip and explains risks in plain language
+
+The project is currently optimized for Yosemite National Park.
 
 You can run it via:
 
-- A **CLI demo** (`app.py`)
-- A **Streamlit UI** (`ui_streamlit.py`)
+A CLI demo (app.py)
 
----
+A Streamlit UI (ui_streamlit.py)
 
-## ✨ Features
+✨ Features
 
-- **Trip scoring**
-  - Access score (closures, alerts)
-  - Weather score (temp, precip, wind)
-  - Crowd/seasonality signal
-  - Overall trip readiness
+Trip scoring
 
-- **RAG over NPS content**
-  - Ingests:
-    - NPS *articles* for conditions / safety / background
-    - NPS *Things To Do* for activity and hike descriptions
-  - Stores chunks in a local **Chroma** vector DB
-  - Uses a local embedding model (SentenceTransformers)
+Access score (closures, alerts)
 
-- **LLM-backed advisor**
-  - Builds a structured, “LLM-ready” prompt:
-    - Trip details
-    - Scores + notes + risk flags
-    - Weather forecast (°F, mph)
-    - NPS alerts
-    - Relevant RAG snippets with sources
-  - Calls an OpenAI model to produce:
-    - A verdict: `GO`, `GO-WITH-CAUTION`, or `AVOID`
-    - A multi-paragraph explanation
-    - Risk discussion + gear recommendations
+Weather score (temp, precip, wind)
 
-- **Streamlit UI**
-  - Choose park, dates, activity, and hiker profile
-  - See scores, weather table, alerts list, and the advisor’s narrative
+Crowd/seasonality signal
 
----
+Overall trip readiness
 
-## 🧱 Project Structure
+Trail-aware recommendations
 
-```text
+Ingests official NPS trail geometry (ArcGIS)
+
+Classifies trails as loops, out-and-back, or networks
+
+Produces realistic distance ranges (round-trip estimates)
+
+Filters trails based on access, closures, and time constraints
+
+RAG over NPS content
+
+Ingests:
+
+NPS articles for conditions / safety / background
+
+NPS Things To Do for activity and hike descriptions
+
+Stores chunks in a local Chroma vector DB
+
+Uses a local embedding model (SentenceTransformers)
+
+LLM-backed advisor
+
+Builds a structured, “LLM-ready” prompt:
+
+Trip details
+
+Scores + notes + risk flags
+
+Weather forecast (°F, mph)
+
+NPS alerts
+
+Relevant RAG snippets
+
+Suggested trail options
+
+Calls an OpenAI model to produce:
+
+A verdict: GO, GO-WITH-CAUTION, or AVOID
+
+A multi-paragraph explanation
+
+Risk discussion + gear recommendations
+
+Streamlit UI
+
+Choose dates, activity, and hiker profile
+
+View scores, weather table, alerts, and advisor output
+
+Park selection is currently locked to Yosemite to match tuned prompts and trail logic
+
+🚀 How to run it
+1. Install dependencies
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+2. Set environment variables
+
+Create a .env file in the project root:
+
+OPENAI_API_KEY=your_openai_key_here
+NPS_API_KEY=your_nps_api_key_here
+
+
+(Open-Meteo does not require an API key.)
+
+3. Run the CLI demo
+python app.py
+
+4. Run the Streamlit UI
+streamlit run ui_streamlit.py
+
+🧱 Project Structure
 parks-advisor/
 │
-├── app.py                  # CLI entrypoint – runs a single demo trip
-├── ui_streamlit.py         # Streamlit UI for interactive use
+├── app.py                  # CLI demo entrypoint
+├── ui_streamlit.py         # Streamlit UI
 │
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
 │
 └── src/
-    ├── config.py           # Env loading, park metadata (including NPS /parks bootstrap)
+    ├── config.py           # Env loading, park metadata
     ├── models.py           # Core dataclasses:
     │   - TripRequest
     │   - WeatherDay
     │   - Alert
     │   - Scores
     │   - DocumentChunk
-    │   - ThingsToDoItem
+    │   - TrailCard
     │
-    ├── weather_client.py   # Open-Meteo client (daily forecast, °C + m/s → °F + mph)
+    ├── weather_client.py   # Open-Meteo client
     ├── nps_client.py       # NPS alerts client
     ├── nps_articles.py     # NPS articles client
     ├── nps_things_to_do.py # NPS "Things To Do" client
+    ├── trails_arcgis.py    # NPS ArcGIS trails ingestion + geometry logic
     │
-    ├── scoring.py          # Trip scoring:
-    │   - access_score
-    │   - weather_score
-    │   - crowd / season heuristics
-    │   - trip_readiness_score
+    ├── scoring.py          # Trip scoring logic
     │
     ├── embeddings/
-    │   ├── base.py         # Abstract Embedder
-    │   └── local_embedder.py   # SentenceTransformers-based embedder
+    │   ├── base.py
+    │   └── local_embedder.py
     │
     ├── rag/
-    │   ├── chunking.py     # Chunking logic for article/ThingsToDo text
-    │   ├── index_builder.py# Builds/updates Chroma index per park
-    │   └── retriever.py    # RAGRetriever: semantic search over stored chunks
+    │   ├── chunking.py
+    │   ├── index_builder.py
+    │   └── retriever.py
     │
-    ├── advisor_context.py  # Orchestrates:
-    │                       # - weather
-    │                       # - alerts
-    │                       # - scores
-    │                       # - RAG retrieval
-    │                       # Returns a unified context dict
-    │
-    ├── prompt_builder.py   # Builds the full LLM prompt from context
-    └── advisor_llm.py      # High-level advisor:
-                            # - build context
-                            # - build prompt
-                            # - call OpenAI LLM
-                            # - return (scores, explanation, prompt_debug)
-
+    ├── advisor_context.py  # Orchestrates weather, alerts, scores, trails, and RAG
+    ├── prompt_builder.py   # Builds the full LLM prompt
+    └── advisor_llm.py      # Calls the LLM and returns scores + explanation
