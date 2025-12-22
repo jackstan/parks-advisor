@@ -53,15 +53,21 @@ def main():
     # --- Trip inputs ---------------------------------------------------------
     st.subheader("Trip details")
 
-    # Park selection (for now: single option, but future-proof)
-    park_codes = list(PARKS.keys())
-    default_park_index = park_codes.index("yose") if "yose" in park_codes else 0
+    
+    # Park selection (locked to Yosemite for now)
+    if "yose" not in PARKS:
+        st.error("PARKS config is missing the 'yose' park code.")
+        st.stop()
+
     park_code = st.selectbox(
         "Park",
-        park_codes,
-        index=default_park_index,
+        options=["yose"],
+        index=0,
         format_func=lambda code: PARKS[code]["name"],
-    )
+        disabled=True,
+    )   
+    st.caption("Currently optimized for Yosemite National Park.")
+
 
     today = dt.date.today()
     max_forecast_day = today + dt.timedelta(days=16)

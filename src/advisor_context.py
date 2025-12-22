@@ -9,6 +9,8 @@ from .scoring import compute_scores
 from .embeddings.local_embedder import LocalEmbedder
 from .rag.retriever import RAGRetriever
 
+from .trails_arcgis import get_trail_cards_for_unit_code, TrailCard
+
 
 def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
     """
@@ -18,6 +20,7 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
     - scores + risk flags + notes
     - alerts
     - retrieved RAG chunks
+    - trail cards (ArcGIS)
     This is what the LLM layer will consume.
     """
 
@@ -32,7 +35,6 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
     scores: Scores = compute_scores(trip, weather_days, alerts)
 
     # 2) Build RAG queries based on trip profile, constraints, and risk flags
-
     queries: List[str] = []
 
     activity = getattr(trip, "activity_type", "hiking")
@@ -43,6 +45,8 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
         max_hours = constraints.get("max_hike_hours")
 
     # --- Primary: trail-focused queries (HIGH weight) ------------------------
+    # Note: These are currently Yosemite-specific strings.
+    # when you generalize parks, swap "Yosemite National Park" for park name.
     if max_hours is not None:
         trail_query_main = (
             f"recommended {activity} trails in Yosemite National Park for {profile} "
@@ -100,8 +104,6 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
 
         results = retriever.search(q, top_k=top_k)
         for chunk, score in results:
-            # Optional debug:
-            # print(f"[DEBUG RAG] query={q!r} -> source={chunk.source}, doc_id={chunk.doc_id}")
             rag_chunks.append(chunk)
 
     # 5) De-duplicate chunks by (doc_id, chunk_id)
@@ -113,10 +115,22 @@ def build_trip_context(trip: TripRequest) -> Dict[str, Any]:
             seen.add(key)
             unique_chunks.append(c)
 
+    # 6) Trails (ArcGIS NPS Public Trails)
+    trail_cards: List[TrailCard] = []
+    try:
+        unit_code = (trip.park_code or "").upper()
+        if unit_code:
+            trail_cards = get_trail_cards_for_unit_code(unit_code)
+        print(f"[DEBUG] ArcGIS trails for UNITCODE='{unit_code}': {len(trail_cards)} names")
+    except Exception as e:
+        print(f"[WARN] Failed to fetch ArcGIS trails for park_code='{trip.park_code}': {e}")
+        trail_cards = []
+
     return {
         "trip": trip,
         "weather": weather_days,
         "scores": scores,
         "alerts": alerts,
         "rag_chunks": unique_chunks,
+        "trail_cards": trail_cards,
     }

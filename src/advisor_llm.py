@@ -1,5 +1,3 @@
-# src/advisor_llm.py
-
 from typing import Tuple
 from . import config  # noqa: F401  # ensures .env is loaded via config.py
 
