@@ -4,10 +4,6 @@ from datetime import date, datetime
 from .models import TripRequest, WeatherDay, Alert, Scores
 
 
-# Re-export for backward compat
-__all__ = ["compute_scores", "c_to_f", "mps_to_mph", "prob_to_pct"]
-
-
 # Centralized weights so you can tweak them in one place
 # These now include a "crowd" component as well.
 WEIGHTS = {
